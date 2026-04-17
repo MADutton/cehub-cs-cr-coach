@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="no-referrer" />
+  <title>CEHub CS/CR Coach</title>
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+<div class="app">
+
+  <!-- Error banner -->
+  <div id="error-banner" class="error-banner hidden">
+    <span id="error-msg"></span>
+    <button onclick="document.getElementById('error-banner').classList.add('hidden')">✕</button>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="app-logo">CEHub</span>
+      <span class="app-subtitle">CS / CR Coach</span>
+    </div>
+    <div class="header-right">
+      <span id="user-name" class="user-name"></span>
+      <span id="user-email" class="user-email"></span>
+    </div>
+  </header>
+
+  <!-- VIEW: identify (fallback when no URL params) -->
+  <section id="view-identify" class="view hidden">
+    <div class="card">
+      <h2>Enter your Participant ID</h2>
+      <p class="muted">Your ID is normally passed automatically from CEHub. If you arrived here directly, enter it below.</p>
+      <form id="identify-form" class="form">
+        <label for="manual-user-id">Thinkific User ID</label>
+        <input id="manual-user-id" type="text" required placeholder="e.g. 12345" />
+        <label for="manual-email">Email (optional)</label>
+        <input id="manual-email" type="email" placeholder="you@example.com" />
+        <button type="submit" class="btn btn-primary">Continue</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- VIEW: history -->
+  <section id="view-history" class="view hidden">
+    <div class="section-header">
+      <h2 class="section-title">Your Submissions</h2>
+      <div class="header-actions">
+        <button id="btn-compare" class="btn btn-ghost btn-sm">View Progress</button>
+        <button id="btn-new-submission" class="btn btn-primary btn-sm">+ New Submission</button>
+      </div>
+    </div>
+    <div id="submission-list" class="submission-list"></div>
+  </section>
+
+  <!-- VIEW: upload -->
+  <section id="view-upload" class="view hidden">
+    <div class="card">
+      <h2>Upload Your Draft</h2>
+      <p class="muted">Upload your Case Summary or Case Report to receive AI feedback based on the official ABVP rubric. You can submit multiple versions to track improvement.</p>
+      <form id="upload-form" class="form">
+        <label for="submission-type">Document Type</label>
+        <select id="submission-type" required>
+          <option value="">Select type…</option>
+          <option value="case_summary">Case Summary (CS)</option>
+          <option value="case_report">Case Report (CR)</option>
+        </select>
+        <label for="submission-file">Upload File (PDF, DOCX, or TXT)</label>
+        <input id="submission-file" type="file" accept=".pdf,.docx,.txt" required />
+        <div class="form-actions">
+          <button type="button" id="btn-cancel-upload" class="btn btn-ghost">Cancel</button>
+          <button type="submit" id="btn-submit-upload" class="btn btn-primary">Get AI Review</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- VIEW: reviewing -->
+  <section id="view-reviewing" class="view hidden">
+    <div class="card centered">
+      <div class="spinner"></div>
+      <h2>AI Review in Progress</h2>
+      <p class="muted">Analysing <strong id="reviewing-version"></strong> against the ABVP rubric.<br>This usually takes 20–40 seconds.</p>
+    </div>
+  </section>
+
+  <!-- VIEW: review dashboard -->
+  <section id="view-review" class="view hidden">
+
+    <div class="review-nav">
+      <button id="btn-back-to-history" class="btn btn-ghost btn-sm">← All Submissions</button>
+      <button id="btn-new-version" class="btn btn-primary btn-sm">Upload New Version</button>
+    </div>
+
+    <!-- Meta -->
+    <div class="card review-header-card">
+      <div class="review-meta">
+        <span id="review-type" class="tag tag-type"></span>
+        <span id="review-version" class="tag tag-ver"></span>
+        <span id="review-date" class="muted small"></span>
+      </div>
+      <div id="review-filename" class="muted small mt4"></div>
+    </div>
+
+    <!-- Score summary -->
+    <div class="card score-card">
+      <div class="score-top">
+        <div>
+          <div id="score-value" class="score-value"></div>
+          <div id="score-pct" class="score-pct"></div>
+        </div>
+        <div id="score-verdict" class="verdict"></div>
+      </div>
+      <div class="score-bar-wrap">
+        <div class="score-bar">
+          <div id="score-bar-fill" class="score-bar-fill"></div>
+          <div class="pass-line" title="70% pass threshold"></div>
+        </div>
+        <div class="bar-labels">
+          <span>0%</span>
+          <span class="pass-label">70% pass</span>
+          <span>100%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section scores -->
+    <div class="card">
+      <div class="card-title">Section Scores</div>
+      <div id="section-scores"></div>
+    </div>
+
+    <!-- Overall impressions -->
+    <div class="card">
+      <div class="card-title">Overall Impressions &amp; Checklist</div>
+      <div id="oi-a" class="oi-row"></div>
+      <div id="oi-b" class="oi-row"></div>
+      <div id="wc-row" class="oi-row"></div>
+    </div>
+
+    <!-- Auto-fails -->
+    <div id="section-autofails" class="card card-danger hidden">
+      <div class="card-title fail-text">Auto-Fail Reasons</div>
+      <ul id="autofails-list" class="item-list"></ul>
+    </div>
+
+    <!-- Formatting -->
+    <div id="section-formatting" class="card hidden">
+      <div class="card-title">Formatting Notes</div>
+      <p class="muted small">Point deduction: <strong id="fmt-deductions"></strong></p>
+      <ul id="fmt-list" class="item-list"></ul>
+    </div>
+
+    <!-- Strengths -->
+    <div class="card card-strengths">
+      <div class="card-title pass-text">Strengths</div>
+      <ul id="strengths-list" class="item-list"></ul>
+    </div>
+
+    <!-- Weaknesses -->
+    <div class="card card-weaknesses">
+      <div class="card-title fail-text">Areas for Improvement</div>
+      <ul id="weaknesses-list" class="item-list"></ul>
+    </div>
+
+  </section>
+
+  <!-- VIEW: compare -->
+  <section id="view-compare" class="view hidden">
+    <div class="section-header">
+      <h2 class="section-title">Progress Over Time</h2>
+      <button id="btn-back-from-compare" class="btn btn-ghost btn-sm">← Back</button>
+    </div>
+    <div id="compare-content"></div>
+  </section>
+
+</div><!-- .app -->
+<script src="/static/app.js"></script>
+</body>
+</html>
