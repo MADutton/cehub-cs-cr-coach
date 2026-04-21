@@ -47,11 +47,14 @@
   <!-- VIEW: history -->
   <section id="view-history" class="view hidden">
     <div class="section-header">
-      <h2 class="section-title">Your Submissions</h2>
+      <h2 class="section-title">Your Submission</h2>
       <div class="header-actions">
-        <button id="btn-compare" class="btn btn-ghost btn-sm">View Progress</button>
-        <button id="btn-new-submission" class="btn btn-primary btn-sm">+ New Submission</button>
+        <button id="btn-new-submission" class="btn btn-primary btn-sm">+ Submit Draft</button>
       </div>
+    </div>
+    <div id="purchase-notice" class="purchase-notice" style="display:none">
+      Your submission for this session has been used.
+      To submit another draft, <a href="https://cehub.thinkific.com" target="_blank">purchase a new session</a>.
     </div>
     <div id="submission-list" class="submission-list"></div>
   </section>
@@ -94,11 +97,8 @@
   <section id="view-review" class="view hidden">
 
     <div class="review-nav">
-      <button id="btn-back-to-history" class="btn btn-ghost btn-sm">← All Submissions</button>
-      <div style="display:flex;gap:8px">
-        <button onclick="window.print()" class="btn btn-ghost btn-sm no-print">&#128438; Print / Save PDF</button>
-        <button id="btn-new-version" class="btn btn-primary btn-sm">Upload New Version</button>
-      </div>
+      <button id="btn-back-to-history" class="btn btn-ghost btn-sm">← Back</button>
+      <button onclick="window.print()" class="btn btn-ghost btn-sm no-print">&#128438; Print / Save PDF</button>
     </div>
 
     <!-- Formative disclaimer -->
@@ -192,4 +192,5 @@
 <script src="/static/app.js"></script>
 </body>
 </html>
+
 
