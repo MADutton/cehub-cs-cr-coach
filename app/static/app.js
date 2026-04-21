@@ -6,6 +6,8 @@
     userId: null,
     userName: "",
     userEmail: "",
+    enrollmentId: "",
+    hasSubmission: false,
     pollHandle: null,
   };
 
@@ -63,9 +65,10 @@
       if (!res.ok) throw new Error("Could not verify your account (" + res.status + ")");
       const data = await res.json();
 
-      state.userId    = data.user_id;
-      state.userName  = data.name  || name  || "";
-      state.userEmail = data.email || email || "";
+      state.userId      = data.user_id;
+      state.userName    = data.name  || name  || "";
+      state.userEmail   = data.email || email || "";
+      state.enrollmentId = enrollmentId || "";
 
       if (state.userName)  $("user-name").textContent  = state.userName;
       if (state.userEmail) $("user-email").textContent = state.userEmail;
@@ -102,6 +105,7 @@
       fd.append("user_id", state.userId);
       fd.append("submission_type", type);
       fd.append("file", fileEl.files[0]);
+      if (state.enrollmentId) fd.append("enrollment_id", state.enrollmentId);
 
       try {
         const res = await fetch("/api/submissions", { method: "POST", body: fd });
@@ -133,13 +137,6 @@
     $("btn-cancel-upload").addEventListener("click",    loadHistory);
     $("btn-back-to-history").addEventListener("click",  loadHistory);
     $("btn-back-from-compare").addEventListener("click",loadHistory);
-    $("btn-new-version").addEventListener("click", () => {
-      $("upload-form").reset();
-      $("btn-submit-upload").disabled = false;
-      $("btn-submit-upload").textContent = "Get AI Feedback";
-      showView("upload");
-    });
-    $("btn-compare").addEventListener("click", loadCompare);
   }
 
   // ── History ────────────────────────────────────────────────────────────────
@@ -159,6 +156,18 @@
 
   function renderHistory(subs) {
     const list = $("submission-list");
+
+    state.hasSubmission = subs.length > 0;
+    const newBtn = $("btn-new-submission");
+    const purchaseNotice = $("purchase-notice");
+    if (state.hasSubmission) {
+      newBtn.style.display = "none";
+      if (purchaseNotice) purchaseNotice.style.display = "";
+    } else {
+      newBtn.style.display = "";
+      if (purchaseNotice) purchaseNotice.style.display = "none";
+    }
+
     if (!subs.length) {
       list.innerHTML = '<div class="status-msg">No submissions yet. Upload your first draft to get started.</div>';
       return;
@@ -454,4 +463,5 @@
   }
 
 })();
+
 
