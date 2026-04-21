@@ -118,7 +118,7 @@
       } catch (err) {
         showError(err.message);
         btn.disabled = false;
-        btn.textContent = "Get AI Review";
+        btn.textContent = "Get AI Feedback";
       }
     });
   }
@@ -127,7 +127,7 @@
     $("btn-new-submission").addEventListener("click", () => {
       $("upload-form").reset();
       $("btn-submit-upload").disabled = false;
-      $("btn-submit-upload").textContent = "Get AI Review";
+      $("btn-submit-upload").textContent = "Get AI Feedback";
       showView("upload");
     });
     $("btn-cancel-upload").addEventListener("click",    loadHistory);
@@ -136,7 +136,7 @@
     $("btn-new-version").addEventListener("click", () => {
       $("upload-form").reset();
       $("btn-submit-upload").disabled = false;
-      $("btn-submit-upload").textContent = "Get AI Review";
+      $("btn-submit-upload").textContent = "Get AI Feedback";
       showView("upload");
     });
     $("btn-compare").addEventListener("click", loadCompare);
@@ -172,7 +172,7 @@
 
       let badge = "";
       if (done)    badge = '<span class="badge ' + (s.estimated_pass ? "badge-pass" : "badge-fail") + '">' + (s.estimated_pass ? "PASS" : "FAIL") + "</span>";
-      else if (running) badge = '<span class="badge badge-pending">Reviewing…</span>';
+      else if (running) badge = '<span class="badge badge-pending">Analyzing…</span>';
       else         badge = '<span class="badge badge-pending">' + esc(s.review_status) + "</span>";
 
       const scoreText = s.estimated_total != null
@@ -209,7 +209,7 @@
         const data = await res.json();
         if (data.review_status === "done") { renderReview(data); return; }
         if (data.review_status === "error") {
-          showError("AI review failed. Please try uploading again.");
+          showError("AI feedback failed. Please try uploading again.");
           await loadHistory(); return;
         }
       } catch (_) {}
@@ -238,7 +238,7 @@
   function renderReview(sub) {
     stopPolling();
     const rev = sub.review;
-    if (!rev) { showError("Review data unavailable."); return; }
+    if (!rev) { showError("Feedback data unavailable."); return; }
 
     const typeLabel = sub.submission_type === "case_summary" ? "Case Summary" : "Case Report";
     const date      = new Date(sub.created_at).toLocaleDateString("en-US", { dateStyle: "long" });
@@ -359,7 +359,7 @@
     wrap.innerHTML = "";
 
     if (!csHistory.length && !crHistory.length) {
-      wrap.innerHTML = '<div class="status-msg">No completed reviews to compare yet.</div>';
+      wrap.innerHTML = '<div class="status-msg">No completed feedback sessions to compare yet.</div>';
       showView("compare"); return;
     }
 
@@ -454,3 +454,4 @@
   }
 
 })();
+
