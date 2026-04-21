@@ -152,6 +152,14 @@ html, body {
   font-size: 12px; color: var(--warning); margin-bottom: 14px;
 }
 
+/* ── Purchase notice (shown after submission is used) ── */
+.purchase-notice {
+  background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.25);
+  border-radius: var(--radius); padding: 12px 16px;
+  font-size: 13px; color: var(--muted); margin-bottom: 14px;
+}
+.purchase-notice a { color: var(--primary); }
+
 /* ── Review header card ── */
 .review-header-card { padding: 14px 20px; }
 .review-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
