@@ -30,7 +30,7 @@ app = FastAPI(title="CEHub CS/CR Coach", lifespan=lifespan)
 _default_origins = [
     "https://cehub.vet",
     "https://www.cehub.vet",
-    "https://cehub.thinkific.com",
+    "https://cehub-vet.thinkific.com",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
@@ -283,4 +283,5 @@ async def _review_task(submission_id: int):
             sub.review_status = "error"
             await db.commit()
             raise
+
 
