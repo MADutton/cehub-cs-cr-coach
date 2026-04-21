@@ -95,7 +95,10 @@
 
     <div class="review-nav">
       <button id="btn-back-to-history" class="btn btn-ghost btn-sm">← All Submissions</button>
-      <button id="btn-new-version" class="btn btn-primary btn-sm">Upload New Version</button>
+      <div style="display:flex;gap:8px">
+        <button onclick="window.print()" class="btn btn-ghost btn-sm no-print">&#128438; Print / Save PDF</button>
+        <button id="btn-new-version" class="btn btn-primary btn-sm">Upload New Version</button>
+      </div>
     </div>
 
     <!-- Formative disclaimer -->
@@ -189,3 +192,4 @@
 <script src="/static/app.js"></script>
 </body>
 </html>
+
