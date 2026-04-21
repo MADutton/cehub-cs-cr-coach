@@ -288,3 +288,62 @@ html, body {
   .sec-rationale { grid-row: 3; }
   .score-value { font-size: 24px; }
 }
+
+/* ── Print / Save as PDF ── */
+@media print {
+  /* Light background so ink doesn't run dry */
+  html, body { background: #fff !important; color: #111 !important; font-size: 13px; }
+
+  /* Hide everything except the active review */
+  .app-header, .review-nav, .formative-notice, .no-print,
+  #error-banner, #view-identify, #view-history,
+  #view-upload, #view-reviewing, #view-compare { display: none !important; }
+
+  #view-review { display: block !important; }
+
+  /* Print header replacing the app header */
+  #view-review::before {
+    content: "CEHub — CS/CR Writing Coach  |  Formative Feedback Report";
+    display: block; font-size: 11px; color: #555;
+    border-bottom: 1px solid #ccc; padding-bottom: 6px; margin-bottom: 14px;
+  }
+
+  .app { max-width: 100%; padding: 0; }
+
+  /* Flatten cards for paper */
+  .card {
+    background: #fff !important; border: 1px solid #ccc !important;
+    box-shadow: none !important; break-inside: avoid;
+    margin-bottom: 10px !important; padding: 12px 14px !important;
+  }
+  .card-strengths { border-left: 3px solid #16a34a !important; }
+  .card-weaknesses { border-left: 3px solid #dc2626 !important; }
+  .card-danger { background: #fff8f8 !important; border-color: #fca5a5 !important; }
+
+  /* Score bar: replace gradient with plain border */
+  .score-bar { background: #e5e7eb !important; }
+  .score-bar-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+
+  /* Section bars */
+  .sec-bar { background: #e5e7eb !important; }
+  .sec-bar-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+
+  /* Verdict badges */
+  .verdict.pass { background: #dcfce7 !important; color: #15803d !important; }
+  .verdict.fail { background: #fee2e2 !important; color: #b91c1c !important; }
+  .badge-pass   { background: #dcfce7 !important; color: #15803d !important; }
+  .badge-fail   { background: #fee2e2 !important; color: #b91c1c !important; }
+
+  /* Overall impression rows */
+  .oi-row { background: #f8fafc !important; border-color: #cbd5e1 !important; }
+
+  /* Text colors */
+  .muted, .card-title, .sec-rationale, .oi-rat, .oi-note { color: #555 !important; }
+  .pass-text { color: #15803d !important; }
+  .fail-text { color: #b91c1c !important; }
+  .sec-score-lbl { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+
+  /* Page breaks */
+  .card-strengths, .card-weaknesses { break-before: auto; }
+}
+
