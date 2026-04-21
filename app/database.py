@@ -34,6 +34,7 @@ class Submission(Base):
     __tablename__ = "submissions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, index=True)
+    enrollment_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
     submission_type: Mapped[str] = mapped_column(String(20))
     filename: Mapped[Optional[str]] = mapped_column(String(500))
     extracted_text: Mapped[Optional[str]] = mapped_column(Text)
@@ -77,3 +78,4 @@ async def get_db():
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
