@@ -128,32 +128,42 @@ async def create_submission(
     user_id: int = Form(...),
     submission_type: str = Form(...),
     file: UploadFile = File(...),
+    enrollment_id: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db),
 ):
     if submission_type not in ("case_summary", "case_report"):
         raise HTTPException(400, "submission_type must be case_summary or case_report")
+
+    # One submission per purchase. Gate by enrollment_id if provided, else by user_id.
+    if enrollment_id:
+        gate_r = await db.execute(
+            select(Submission).where(Submission.enrollment_id == enrollment_id)
+        )
+    else:
+        gate_r = await db.execute(
+            select(Submission).where(Submission.user_id == user_id)
+        )
+    if gate_r.scalar_one_or_none():
+        raise HTTPException(
+            403,
+            "Your submission for this purchase has already been used. "
+            "Purchase a new session at cehub.vet to submit another draft."
+        )
 
     content = await file.read()
     text, word_count, err = await extract_text(content, file.filename or "")
     if err and not text:
         raise HTTPException(400, f"Could not extract text: {err}")
 
-    existing_r = await db.execute(
-        select(Submission).where(
-            Submission.user_id == user_id,
-            Submission.submission_type == submission_type,
-        )
-    )
-    version = len(existing_r.scalars().all()) + 1
-
     now = int(time.time() * 1000)
     sub = Submission(
         user_id=user_id,
+        enrollment_id=enrollment_id,
         submission_type=submission_type,
         filename=file.filename,
         extracted_text=text,
         word_count=word_count,
-        version_number=version,
+        version_number=1,
         review_status="running",
         created_at=now,
     )
@@ -162,7 +172,7 @@ async def create_submission(
     await db.refresh(sub)
 
     background_tasks.add_task(_review_task, sub.id)
-    return {"submission_id": sub.id, "version_number": version, "word_count": word_count}
+    return {"submission_id": sub.id, "version_number": 1, "word_count": word_count}
 
 
 @app.get("/api/submissions/{submission_id}")
@@ -273,3 +283,4 @@ async def _review_task(submission_id: int):
             sub.review_status = "error"
             await db.commit()
             raise
+
