@@ -1,4 +1,4 @@
-/* CEHub CS/CR Coach — dark theme */
+/* CEHub CS/CR Writing Coach — dark theme */
 :root {
   --bg:       #0f172a;
   --surface:  #1e293b;
@@ -22,10 +22,10 @@
 html, body {
   background: var(--bg); color: var(--text);
   font-family: var(--font); font-size: 15px; line-height: 1.5;
-  min-height: 100vh;
 }
 
-.app { max-width: 900px; margin: 0 auto; padding: 16px 16px 80px; }
+/* No min-height: 100vh — allows natural height inside Thinkific iframes */
+.app { max-width: 900px; margin: 0 auto; padding: 16px 16px 60px; }
 
 /* ── Header ── */
 .app-header {
@@ -98,6 +98,14 @@ html, body {
 }
 .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 
+/* ── Upload note ── */
+.upload-note {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px;
+  font-size: 13px; color: var(--muted); line-height: 1.6;
+}
+.upload-note strong { color: var(--text); }
+
 /* ── Submission list ── */
 .submission-list { display: flex; flex-direction: column; gap: 10px; }
 .sub-card {
@@ -136,6 +144,13 @@ html, body {
 
 /* ── Review nav ── */
 .review-nav { display: flex; justify-content: space-between; margin-bottom: 12px; }
+
+/* ── Formative notice ── */
+.formative-notice {
+  background: rgba(234,179,8,.08); border: 1px solid rgba(234,179,8,.25);
+  border-radius: var(--radius); padding: 10px 14px;
+  font-size: 12px; color: var(--warning); margin-bottom: 14px;
+}
 
 /* ── Review header card ── */
 .review-header-card { padding: 14px 20px; }
@@ -262,6 +277,7 @@ html, body {
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
 .mt4   { margin-top: 4px; }
+.mt8   { margin-top: 8px; }
 .hidden { display: none !important; }
 .view { margin-bottom: 8px; }
 

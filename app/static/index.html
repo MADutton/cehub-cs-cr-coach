@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="no-referrer" />
-  <title>CEHub RMV — CS/CR Review</title>
+  <title>CEHub — CS/CR Writing Coach</title>
   <link rel="stylesheet" href="/static/app.css" />
 </head>
 <body>
@@ -19,8 +19,8 @@
   <!-- Header -->
   <header class="app-header">
     <div class="header-left">
-      <span class="app-logo">CEHub RMV</span>
-      <span class="app-subtitle">CS / CR Review</span>
+      <span class="app-logo">CEHub</span>
+      <span class="app-subtitle">CS / CR Writing Coach</span>
     </div>
     <div class="header-right">
       <span id="user-name" class="user-name"></span>
@@ -31,15 +31,16 @@
   <!-- VIEW: identify (fallback when no URL params) -->
   <section id="view-identify" class="view hidden">
     <div class="card">
-      <h2>Enter your Participant ID</h2>
-      <p class="muted">Your ID is normally passed automatically from CEHub. If you arrived here directly, enter it below.</p>
+      <h2>Access Your Writing Coach</h2>
+      <p class="muted">This tool is accessed through your CEHub course. If you arrived here directly, you can enter your course participant ID below to continue.</p>
       <form id="identify-form" class="form">
-        <label for="manual-user-id">Thinkific User ID</label>
+        <label for="manual-user-id">Participant ID</label>
         <input id="manual-user-id" type="text" required placeholder="e.g. 12345" />
         <label for="manual-email">Email (optional)</label>
         <input id="manual-email" type="email" placeholder="you@example.com" />
         <button type="submit" class="btn btn-primary">Continue</button>
       </form>
+      <p class="muted small mt8">Not enrolled? Visit <strong>cehub.vet</strong> to purchase access.</p>
     </div>
   </section>
 
@@ -59,7 +60,7 @@
   <section id="view-upload" class="view hidden">
     <div class="card">
       <h2>Upload Your Draft</h2>
-      <p class="muted">Upload your Case Summary or Case Report to receive AI feedback based on the official ABVP rubric. You can submit multiple versions to track improvement.</p>
+      <p class="muted">Upload your Case Summary or Case Report to receive AI feedback based on the official ABVP rubric. You can submit multiple versions to track your improvement over time.</p>
       <form id="upload-form" class="form">
         <label for="submission-type">Document Type</label>
         <select id="submission-type" required>
@@ -69,9 +70,12 @@
         </select>
         <label for="submission-file">Upload File (PDF, DOCX, or TXT)</label>
         <input id="submission-file" type="file" accept=".pdf,.docx,.txt" required />
+        <div class="upload-note">
+          <strong>What you'll receive:</strong> Section-by-section rubric scores, strengths, areas for improvement, and an estimated pass/fail estimate — the same rubric used by ABVP reviewers.
+        </div>
         <div class="form-actions">
           <button type="button" id="btn-cancel-upload" class="btn btn-ghost">Cancel</button>
-          <button type="submit" id="btn-submit-upload" class="btn btn-primary">Get AI Review</button>
+          <button type="submit" id="btn-submit-upload" class="btn btn-primary">Get AI Feedback</button>
         </div>
       </form>
     </div>
@@ -82,7 +86,7 @@
     <div class="card centered">
       <div class="spinner"></div>
       <h2>AI Review in Progress</h2>
-      <p class="muted">Analysing <strong id="reviewing-version"></strong> against the ABVP rubric.<br>This usually takes 20–40 seconds.</p>
+      <p class="muted">Analyzing <strong id="reviewing-version"></strong> against the ABVP rubric.<br>This usually takes 20–40 seconds. Please keep this window open.</p>
     </div>
   </section>
 
@@ -92,6 +96,11 @@
     <div class="review-nav">
       <button id="btn-back-to-history" class="btn btn-ghost btn-sm">← All Submissions</button>
       <button id="btn-new-version" class="btn btn-primary btn-sm">Upload New Version</button>
+    </div>
+
+    <!-- Formative disclaimer -->
+    <div class="formative-notice">
+      This is <strong>formative AI feedback</strong> to help you improve your draft — not an official ABVP review. Scores are estimates only.
     </div>
 
     <!-- Meta -->
