@@ -28,14 +28,17 @@
     </div>
   </header>
 
-  <!-- VIEW: access required (shown when no enrollment context) -->
+  <!-- VIEW: email entry (shown when no enrollment context in URL) -->
   <section id="view-access" class="view hidden">
     <div class="card">
-      <h2>Access Restricted</h2>
-      <p>This tool is available only to enrolled CEHub course participants.</p>
-      <p class="muted">Please open the Writing Coach lesson inside your course on <strong>cehub.vet</strong>. Accessing this page directly is not supported.</p>
-      <p class="mt8"><a class="btn btn-primary" href="https://cehub-vet.thinkific.com/courses/ABVP%20CS%20and%20CR%20AI%20Review" target="_top">Go to your course</a></p>
-      <p class="muted small mt8">Not enrolled yet? Visit <strong>cehub.vet</strong> to purchase access.</p>
+      <h2>Access Your Writing Coach</h2>
+      <p class="muted">Enter the email address you used to purchase access on <strong>cehub.vet</strong>.</p>
+      <form id="email-form" class="form">
+        <label for="access-email">Email Address</label>
+        <input id="access-email" type="email" required placeholder="you@example.com" autocomplete="email" />
+        <button type="submit" id="btn-email-submit" class="btn btn-primary">Continue</button>
+      </form>
+      <p class="muted small mt8">Not enrolled yet? Visit <a href="https://cehub-vet.thinkific.com/courses/ABVP%20CS%20and%20CR%20AI%20Review" target="_blank">cehub.vet</a> to purchase access.</p>
     </div>
   </section>
 

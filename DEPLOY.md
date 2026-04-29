@@ -39,33 +39,36 @@ Webhooks**, depending on your admin layout):
 
 - **Model:** `Enrollment`
 - **Topic:** `enrollment.created`
-- **Target URL:** `https://cehub-cs-cr-coach.onrender.com/webhooks/thinkific`
-- **Secret:** paste the same value you set as `THINKIFIC_WEBHOOK_SECRET`.
+- **Target URL:** `https://cehub-cs-cr-coach.onrender.com/webhooks/thinkific?secret=YOUR_SECRET`
+  Replace `YOUR_SECRET` with the value of `THINKIFIC_WEBHOOK_SECRET` in Render.
 
-Note: `enrollment.deleted` does not exist as a Thinkific topic. If you need
-to revoke access after a refund, manually set `revoked = true` on the
-relevant row in the `enrollments` database table. Automated refund-revocation
-is Phase 2.
+Note: Thinkific basic webhooks (Grow plan) do not send an HMAC header. We
+authenticate via the `?secret=` query param in the URL instead. Keep this URL
+private — it is the only thing preventing forged webhook deliveries.
 
-Save. Thinkific will sign each delivery with HMAC-SHA256 in the
-`X-Thinkific-Hmac-Sha256` header.
+Note: `enrollment.deleted` does not exist as a Thinkific topic. To revoke
+access after a refund, manually set `revoked = true` on the relevant row in
+the `enrollments` database table. Automated refund-revocation is Phase 2.
+
+Save. Thinkific will POST the enrollment payload to your URL on each purchase.
 
 ## 3. Iframe URL in the lesson
 
-Your lesson HTML should pass user + enrollment context as URL params using
-Thinkific Liquid variables:
+Thinkific lesson HTML code blocks do **not** render Liquid variables — they
+pass `{{user.id}}` as a literal string. Use a plain iframe URL with no params:
 
 ```html
 <iframe
-  src="https://cehub-cs-cr-coach.onrender.com/?user_id={{user.id}}&user_email={{user.email}}&user_name={{user.first_name}} {{user.last_name}}&enrollment_id={{enrollment.id}}"
+  src="https://cehub-cs-cr-coach.onrender.com/"
   width="100%"
   height="900"
   style="border:none;"
 ></iframe>
 ```
 
-`enrollment_id` is now **required**. If it is missing, the tool shows an
-"Access Restricted" page and refuses uploads.
+Users will see an email entry form. They enter the email they used to purchase;
+the backend looks it up in the enrollment allowlist (populated by the webhook)
+and grants access if found. No Liquid required.
 
 ## 4. Verification
 

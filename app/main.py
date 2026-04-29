@@ -1,5 +1,4 @@
 from __future__ import annotations
-import hashlib
 import hmac
 import json
 import logging
@@ -66,23 +65,20 @@ async def health():
 
 # ── Thinkific webhook ─────────────────────────────────────────────────────────
 
-def _verify_thinkific_signature(raw_body: bytes, signature_header: str, secret: str) -> bool:
-    expected = hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, signature_header or "")
-
-
 @app.post("/webhooks/thinkific")
 async def thinkific_webhook(request: Request, db: AsyncSession = Depends(get_db)):
+    # Thinkific basic webhooks (Grow plan) do not send an HMAC header.
+    # We authenticate via a shared secret passed as a URL query param.
+    # Webhook URL in Thinkific must be: .../webhooks/thinkific?secret=YOUR_SECRET
     secret = os.environ.get("THINKIFIC_WEBHOOK_SECRET")
     if not secret:
         logger.error("THINKIFIC_WEBHOOK_SECRET is not set; refusing webhook")
         raise HTTPException(503, "Webhook receiver is not configured.")
 
-    raw = await request.body()
-    sig = request.headers.get("X-Thinkific-Hmac-Sha256", "")
-    if not _verify_thinkific_signature(raw, sig, secret):
-        logger.warning("Thinkific webhook signature mismatch")
-        raise HTTPException(401, "Invalid signature.")
+    provided = request.query_params.get("secret", "")
+    if not hmac.compare_digest(provided, secret):
+        logger.warning("Thinkific webhook secret mismatch")
+        raise HTTPException(401, "Invalid secret.")
 
     try:
         body = json.loads(raw.decode("utf-8") or "{}")
@@ -159,6 +155,51 @@ async def thinkific_webhook(request: Request, db: AsyncSession = Depends(get_db)
 
 
 # ── User ──────────────────────────────────────────────────────────────────────
+
+@app.post("/api/identify-by-email")
+async def identify_by_email(
+    email: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    enr_r = await db.execute(
+        select(Enrollment).where(
+            Enrollment.user_email == email.strip().lower(),
+            Enrollment.revoked == False,
+        )
+    )
+    enr = enr_r.scalar_one_or_none()
+    if not enr:
+        raise HTTPException(
+            403,
+            "No active enrollment found for that email. Make sure it matches "
+            "the email you used to purchase at cehub.vet. "
+            "Contact support@cehub.vet if the problem persists."
+        )
+
+    now = int(time.time() * 1000)
+    user_r = await db.execute(
+        select(User).where(User.thinkific_user_id == enr.thinkific_user_id)
+    )
+    user = user_r.scalar_one_or_none()
+    if not user:
+        user = User(
+            thinkific_user_id=enr.thinkific_user_id,
+            email=enr.user_email,
+            name=enr.user_name,
+            enrollment_id=enr.thinkific_enrollment_id,
+            created_at=now,
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+
+    return {
+        "user_id": user.id,
+        "thinkific_user_id": user.thinkific_user_id,
+        "email": enr.user_email,
+        "name": enr.user_name,
+        "enrollment_id": enr.thinkific_enrollment_id,
+    }
 
 @app.post("/api/identify")
 async def identify(

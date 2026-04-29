@@ -45,7 +45,8 @@
   document.addEventListener("DOMContentLoaded", () => {
     bindForms();
     bindNav();
-    if (urlUserId && urlEnrollId) {
+    const isLiquid = (s) => s.includes("{");
+    if (urlUserId && urlEnrollId && !isLiquid(urlUserId) && !isLiquid(urlEnrollId)) {
       identify(urlUserId, urlEmail, urlName, urlEnrollId);
     } else {
       showView("access");
@@ -81,6 +82,37 @@
   }
 
   function bindForms() {
+    // Email entry form
+    $("email-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = $("access-email").value.trim();
+      if (!email) return;
+      const btn = $("btn-email-submit");
+      btn.disabled = true;
+      btn.textContent = "Checking…";
+      try {
+        const fd = new FormData();
+        fd.append("email", email);
+        const res = await fetch("/api/identify-by-email", { method: "POST", body: fd });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "Access check failed (" + res.status + ")");
+        }
+        const data = await res.json();
+        state.userId      = data.user_id;
+        state.userName    = data.name  || "";
+        state.userEmail   = data.email || email;
+        state.enrollmentId = data.enrollment_id || "";
+        if (state.userName)  $("user-name").textContent  = state.userName;
+        if (state.userEmail) $("user-email").textContent = state.userEmail;
+        await loadHistory();
+      } catch (err) {
+        showError(err.message);
+        btn.disabled = false;
+        btn.textContent = "Continue";
+      }
+    });
+
     // Upload form
     $("upload-form").addEventListener("submit", async (e) => {
       e.preventDefault();
