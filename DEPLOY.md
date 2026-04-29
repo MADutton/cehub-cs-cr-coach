@@ -37,10 +37,15 @@ Find the course ID in Thinkific:
 Thinkific Admin → **Apps** → **Webhooks** (or **Settings → Code & Analytics →
 Webhooks**, depending on your admin layout):
 
-- **Topic:** `enrollment.created` (also add `enrollment.deleted` if you want
-  refunds to revoke access automatically).
+- **Model:** `Enrollment`
+- **Topic:** `enrollment.created`
 - **Target URL:** `https://cehub-cs-cr-coach.onrender.com/webhooks/thinkific`
 - **Secret:** paste the same value you set as `THINKIFIC_WEBHOOK_SECRET`.
+
+Note: `enrollment.deleted` does not exist as a Thinkific topic. If you need
+to revoke access after a refund, manually set `revoked = true` on the
+relevant row in the `enrollments` database table. Automated refund-revocation
+is Phase 2.
 
 Save. Thinkific will sign each delivery with HMAC-SHA256 in the
 `X-Thinkific-Hmac-Sha256` header.
