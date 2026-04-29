@@ -44,6 +44,20 @@ class Submission(Base):
     created_at: Mapped[int] = mapped_column(BigInteger)
 
 
+class Enrollment(Base):
+    __tablename__ = "enrollments"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    thinkific_enrollment_id: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    thinkific_user_id: Mapped[str] = mapped_column(String(255), index=True)
+    course_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
+    user_email: Mapped[Optional[str]] = mapped_column(String(255))
+    user_name: Mapped[Optional[str]] = mapped_column(String(255))
+    expiry_date: Mapped[Optional[str]] = mapped_column(String(64))
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[int] = mapped_column(BigInteger)
+    updated_at: Mapped[int] = mapped_column(BigInteger)
+
+
 class Review(Base):
     __tablename__ = "reviews"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

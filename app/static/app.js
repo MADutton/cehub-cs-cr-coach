@@ -20,7 +20,7 @@
 
   // ── DOM helpers ────────────────────────────────────────────────────────────
   const $   = (id) => document.getElementById(id);
-  const VIEWS = ["identify","history","upload","reviewing","review","compare"];
+  const VIEWS = ["access","history","upload","reviewing","review","compare"];
 
   function showView(name) {
     VIEWS.forEach((v) => {
@@ -45,10 +45,10 @@
   document.addEventListener("DOMContentLoaded", () => {
     bindForms();
     bindNav();
-    if (urlUserId) {
+    if (urlUserId && urlEnrollId) {
       identify(urlUserId, urlEmail, urlName, urlEnrollId);
     } else {
-      showView("identify");
+      showView("access");
     }
   });
 
@@ -76,20 +76,11 @@
       await loadHistory();
     } catch (err) {
       showError(err.message);
-      showView("identify");
+      showView("access");
     }
   }
 
   function bindForms() {
-    // Identify form (fallback)
-    $("identify-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const id    = $("manual-user-id").value.trim();
-      const email = $("manual-email").value.trim();
-      if (!id) return;
-      await identify(id, email, "", "");
-    });
-
     // Upload form
     $("upload-form").addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -101,11 +92,16 @@
       btn.disabled = true;
       btn.textContent = "Uploading…";
 
+      if (!state.enrollmentId) {
+        showError("Your enrollment context is missing. Please re-open this tool from your CEHub course lesson.");
+        return;
+      }
+
       const fd = new FormData();
       fd.append("user_id", state.userId);
       fd.append("submission_type", type);
       fd.append("file", fileEl.files[0]);
-      if (state.enrollmentId) fd.append("enrollment_id", state.enrollmentId);
+      fd.append("enrollment_id", state.enrollmentId);
 
       try {
         const res = await fetch("/api/submissions", { method: "POST", body: fd });

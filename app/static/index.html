@@ -28,19 +28,14 @@
     </div>
   </header>
 
-  <!-- VIEW: identify (fallback when no URL params) -->
-  <section id="view-identify" class="view hidden">
+  <!-- VIEW: access required (shown when no enrollment context) -->
+  <section id="view-access" class="view hidden">
     <div class="card">
-      <h2>Access Your Writing Coach</h2>
-      <p class="muted">This tool is accessed through your CEHub course. If you arrived here directly, you can enter your course participant ID below to continue.</p>
-      <form id="identify-form" class="form">
-        <label for="manual-user-id">Participant ID</label>
-        <input id="manual-user-id" type="text" required placeholder="e.g. 12345" />
-        <label for="manual-email">Email (optional)</label>
-        <input id="manual-email" type="email" placeholder="you@example.com" />
-        <button type="submit" class="btn btn-primary">Continue</button>
-      </form>
-      <p class="muted small mt8">Not enrolled? Visit <strong>cehub.vet</strong> to purchase access.</p>
+      <h2>Access Restricted</h2>
+      <p>This tool is available only to enrolled CEHub course participants.</p>
+      <p class="muted">Please open the Writing Coach lesson inside your course on <strong>cehub.vet</strong>. Accessing this page directly is not supported.</p>
+      <p class="mt8"><a class="btn btn-primary" href="https://cehub-vet.thinkific.com/courses/ABVP%20CS%20and%20CR%20AI%20Review" target="_top">Go to your course</a></p>
+      <p class="muted small mt8">Not enrolled yet? Visit <strong>cehub.vet</strong> to purchase access.</p>
     </div>
   </section>
 

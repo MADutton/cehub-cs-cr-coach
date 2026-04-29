@@ -1,4 +1,8 @@
 from __future__ import annotations
+import hashlib
+import hmac
+import json
+import logging
 import os
 import time
 from contextlib import asynccontextmanager
@@ -7,16 +11,18 @@ from typing import Optional
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .database import AsyncSessionLocal, Review, Submission, User, get_db, init_db
+from .database import AsyncSessionLocal, Enrollment, Review, Submission, User, get_db, init_db
 from .extractor import extract_text
 from .scorer import run_ai_review
+
+logger = logging.getLogger("cehub.coach")
 
 
 @asynccontextmanager
@@ -56,6 +62,100 @@ if os.path.isdir(_STATIC):
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+# ── Thinkific webhook ─────────────────────────────────────────────────────────
+
+def _verify_thinkific_signature(raw_body: bytes, signature_header: str, secret: str) -> bool:
+    expected = hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature_header or "")
+
+
+@app.post("/webhooks/thinkific")
+async def thinkific_webhook(request: Request, db: AsyncSession = Depends(get_db)):
+    secret = os.environ.get("THINKIFIC_WEBHOOK_SECRET")
+    if not secret:
+        logger.error("THINKIFIC_WEBHOOK_SECRET is not set; refusing webhook")
+        raise HTTPException(503, "Webhook receiver is not configured.")
+
+    raw = await request.body()
+    sig = request.headers.get("X-Thinkific-Hmac-Sha256", "")
+    if not _verify_thinkific_signature(raw, sig, secret):
+        logger.warning("Thinkific webhook signature mismatch")
+        raise HTTPException(401, "Invalid signature.")
+
+    try:
+        body = json.loads(raw.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        raise HTTPException(400, "Invalid JSON.")
+
+    resource = body.get("resource")
+    action = body.get("action")
+    if resource != "enrollment":
+        return {"ok": True, "skipped": f"resource={resource}"}
+
+    payload = body.get("payload") or {}
+    enrollment_id = str(payload.get("id") or "")
+    course_id = str(payload.get("course_id") or "")
+    user_obj = payload.get("user") or {}
+    thinkific_user_id = str(user_obj.get("id") or "")
+    user_email = user_obj.get("email")
+    first = (user_obj.get("first_name") or "").strip()
+    last = (user_obj.get("last_name") or "").strip()
+    user_name = (first + " " + last).strip() or None
+    expiry_date = payload.get("expiry_date")
+
+    if not enrollment_id or not thinkific_user_id:
+        raise HTTPException(400, "Webhook payload missing enrollment id or user id.")
+
+    target_course = os.environ.get("THINKIFIC_COURSE_ID", "").strip()
+    if target_course and course_id != target_course:
+        return {"ok": True, "skipped": f"course_id={course_id} not target {target_course}"}
+    if not target_course:
+        logger.warning(
+            "THINKIFIC_COURSE_ID is not set; accepting enrollment for course_id=%s. "
+            "Set this env var to restrict the gate to a single course.",
+            course_id,
+        )
+
+    now_ms = int(time.time() * 1000)
+    existing_r = await db.execute(
+        select(Enrollment).where(Enrollment.thinkific_enrollment_id == enrollment_id)
+    )
+    existing = existing_r.scalar_one_or_none()
+
+    if action in ("created", "updated"):
+        if existing:
+            existing.thinkific_user_id = thinkific_user_id
+            existing.course_id = course_id or existing.course_id
+            existing.user_email = user_email or existing.user_email
+            existing.user_name = user_name or existing.user_name
+            existing.expiry_date = expiry_date
+            existing.revoked = False
+            existing.updated_at = now_ms
+        else:
+            db.add(Enrollment(
+                thinkific_enrollment_id=enrollment_id,
+                thinkific_user_id=thinkific_user_id,
+                course_id=course_id or None,
+                user_email=user_email,
+                user_name=user_name,
+                expiry_date=expiry_date,
+                revoked=False,
+                created_at=now_ms,
+                updated_at=now_ms,
+            ))
+        await db.commit()
+        return {"ok": True, "action": action, "enrollment_id": enrollment_id}
+
+    if action == "deleted":
+        if existing:
+            existing.revoked = True
+            existing.updated_at = now_ms
+            await db.commit()
+        return {"ok": True, "action": "deleted", "enrollment_id": enrollment_id}
+
+    return {"ok": True, "skipped": f"action={action}"}
 
 
 # ── User ──────────────────────────────────────────────────────────────────────
@@ -128,21 +228,38 @@ async def create_submission(
     user_id: int = Form(...),
     submission_type: str = Form(...),
     file: UploadFile = File(...),
-    enrollment_id: Optional[str] = Form(None),
+    enrollment_id: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
     if submission_type not in ("case_summary", "case_report"):
         raise HTTPException(400, "submission_type must be case_summary or case_report")
 
-    # One submission per purchase. Gate by enrollment_id if provided, else by user_id.
-    if enrollment_id:
-        gate_r = await db.execute(
-            select(Submission).where(Submission.enrollment_id == enrollment_id)
+    user_r = await db.execute(select(User).where(User.id == user_id))
+    user = user_r.scalar_one_or_none()
+    if not user:
+        raise HTTPException(403, "Unknown user. Please re-open this tool from your CEHub course.")
+
+    # Allowlist gate: enrollment must have been registered via Thinkific webhook,
+    # must belong to this Thinkific user, and must not be revoked.
+    enr_r = await db.execute(
+        select(Enrollment).where(Enrollment.thinkific_enrollment_id == enrollment_id)
+    )
+    enr = enr_r.scalar_one_or_none()
+    if not enr:
+        raise HTTPException(
+            403,
+            "Your enrollment is not yet active. If you just purchased, please refresh "
+            "this page in a moment. If the problem persists, contact support@cehub.vet."
         )
-    else:
-        gate_r = await db.execute(
-            select(Submission).where(Submission.user_id == user_id)
-        )
+    if enr.thinkific_user_id != user.thinkific_user_id:
+        raise HTTPException(403, "This enrollment does not belong to your account.")
+    if enr.revoked:
+        raise HTTPException(403, "This enrollment has been revoked.")
+
+    # One submission per purchase.
+    gate_r = await db.execute(
+        select(Submission).where(Submission.enrollment_id == enrollment_id)
+    )
     if gate_r.scalar_one_or_none():
         raise HTTPException(
             403,

@@ -15,6 +15,10 @@ services:
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4o
+      - key: THINKIFIC_WEBHOOK_SECRET
+        sync: false
+      - key: THINKIFIC_COURSE_ID
+        sync: false
 
 databases:
   - name: cehub-cs-cr-coach-db
