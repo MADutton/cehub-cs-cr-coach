@@ -80,6 +80,7 @@ async def thinkific_webhook(request: Request, db: AsyncSession = Depends(get_db)
         logger.warning("Thinkific webhook secret mismatch")
         raise HTTPException(401, "Invalid secret.")
 
+    raw = await request.body()
     try:
         body = json.loads(raw.decode("utf-8") or "{}")
     except json.JSONDecodeError:
