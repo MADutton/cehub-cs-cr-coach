@@ -105,8 +105,14 @@ async def thinkific_webhook(request: Request, db: AsyncSession = Depends(get_db)
     if not enrollment_id or not thinkific_user_id:
         raise HTTPException(400, "Webhook payload missing enrollment id or user id.")
 
+    logger.info(
+        "Webhook received: action=%s enrollment_id=%s course_id=%s email=%s",
+        action, enrollment_id, course_id, user_email,
+    )
+
     target_course = os.environ.get("THINKIFIC_COURSE_ID", "").strip()
     if target_course and course_id != target_course:
+        logger.info("Skipping enrollment: course_id=%s does not match target=%s", course_id, target_course)
         return {"ok": True, "skipped": f"course_id={course_id} not target {target_course}"}
     if not target_course:
         logger.warning(
