@@ -161,6 +161,45 @@ async def thinkific_webhook(request: Request, db: AsyncSession = Depends(get_db)
     return {"ok": True, "skipped": f"action={action}"}
 
 
+# ── Admin: manual enrollment seed ────────────────────────────────────────────
+
+@app.post("/admin/seed-enrollment")
+async def seed_enrollment(
+    email: str = Form(...),
+    thinkific_user_id: str = Form(...),
+    enrollment_id: str = Form(...),
+    admin_secret: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    expected = os.environ.get("ADMIN_SECRET", "")
+    if not expected or not hmac.compare_digest(admin_secret, expected):
+        raise HTTPException(403, "Invalid admin secret.")
+
+    now_ms = int(time.time() * 1000)
+    existing_r = await db.execute(
+        select(Enrollment).where(Enrollment.thinkific_enrollment_id == enrollment_id)
+    )
+    existing = existing_r.scalar_one_or_none()
+    if existing:
+        existing.user_email = email.strip().lower()
+        existing.thinkific_user_id = thinkific_user_id
+        existing.revoked = False
+        existing.updated_at = now_ms
+    else:
+        db.add(Enrollment(
+            thinkific_enrollment_id=enrollment_id,
+            thinkific_user_id=thinkific_user_id,
+            course_id=os.environ.get("THINKIFIC_COURSE_ID"),
+            user_email=email.strip().lower(),
+            revoked=False,
+            created_at=now_ms,
+            updated_at=now_ms,
+        ))
+    await db.commit()
+    logger.warning("Admin seeded enrollment: email=%s enrollment_id=%s", email, enrollment_id)
+    return {"ok": True, "enrollment_id": enrollment_id, "email": email}
+
+
 # ── User ──────────────────────────────────────────────────────────────────────
 
 @app.post("/api/identify-by-email")
