@@ -167,17 +167,20 @@ async def thinkific_webhook(request: Request, db: AsyncSession = Depends(get_db)
 async def seed_enrollment(
     email: str = Form(...),
     thinkific_user_id: str = Form(...),
-    enrollment_id: str = Form(...),
     admin_secret: str = Form(...),
+    enrollment_id: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db),
 ):
     expected = os.environ.get("ADMIN_SECRET", "")
     if not expected or not hmac.compare_digest(admin_secret, expected):
         raise HTTPException(403, "Invalid admin secret.")
 
+    import secrets as _secrets
+    eid = (enrollment_id or "").strip() or f"admin-{_secrets.token_hex(8)}"
+
     now_ms = int(time.time() * 1000)
     existing_r = await db.execute(
-        select(Enrollment).where(Enrollment.thinkific_enrollment_id == enrollment_id)
+        select(Enrollment).where(Enrollment.thinkific_enrollment_id == eid)
     )
     existing = existing_r.scalar_one_or_none()
     if existing:
@@ -187,7 +190,7 @@ async def seed_enrollment(
         existing.updated_at = now_ms
     else:
         db.add(Enrollment(
-            thinkific_enrollment_id=enrollment_id,
+            thinkific_enrollment_id=eid,
             thinkific_user_id=thinkific_user_id,
             course_id=os.environ.get("THINKIFIC_COURSE_ID"),
             user_email=email.strip().lower(),
@@ -196,8 +199,8 @@ async def seed_enrollment(
             updated_at=now_ms,
         ))
     await db.commit()
-    logger.warning("Admin seeded enrollment: email=%s enrollment_id=%s", email, enrollment_id)
-    return {"ok": True, "enrollment_id": enrollment_id, "email": email}
+    logger.warning("Admin seeded enrollment: email=%s enrollment_id=%s", email, eid)
+    return {"ok": True, "enrollment_id": eid, "email": email}
 
 
 # ── User ──────────────────────────────────────────────────────────────────────
