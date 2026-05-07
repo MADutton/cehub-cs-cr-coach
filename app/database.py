@@ -27,12 +27,15 @@ class User(Base):
     email: Mapped[Optional[str]] = mapped_column(String(255))
     name: Mapped[Optional[str]] = mapped_column(String(255))
     enrollment_id: Mapped[Optional[str]] = mapped_column(String(255))
+    user_hash: Mapped[Optional[str]] = mapped_column(String(64), index=True)
     created_at: Mapped[int] = mapped_column(BigInteger)
 
 
 class Submission(Base):
     __tablename__ = "submissions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    submission_uuid: Mapped[Optional[str]] = mapped_column(String(36), unique=True, index=True)
+    rmv_type: Mapped[str] = mapped_column(String(32), default="case_review")
     user_id: Mapped[int] = mapped_column(Integer, index=True)
     enrollment_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
     submission_type: Mapped[str] = mapped_column(String(20))
@@ -40,6 +43,7 @@ class Submission(Base):
     extracted_text: Mapped[Optional[str]] = mapped_column(Text)
     word_count: Mapped[Optional[int]] = mapped_column(Integer)
     version_number: Mapped[int] = mapped_column(Integer, default=1)
+    attempt_number: Mapped[int] = mapped_column(Integer, default=1)
     review_status: Mapped[str] = mapped_column(String(20), default="pending")
     created_at: Mapped[int] = mapped_column(BigInteger)
 
@@ -76,12 +80,27 @@ class Review(Base):
     estimated_max: Mapped[Optional[int]] = mapped_column(Integer)
     estimated_pass_score: Mapped[Optional[int]] = mapped_column(Integer)
     estimated_pct: Mapped[Optional[float]] = mapped_column(Float)
+    previous_pct: Mapped[Optional[float]] = mapped_column(Float)
+    score_delta: Mapped[Optional[float]] = mapped_column(Float)
     estimated_pass: Mapped[Optional[bool]] = mapped_column(Boolean)
     auto_fail_reasons: Mapped[Optional[list]] = mapped_column(JSON)
     flags: Mapped[Optional[list]] = mapped_column(JSON)
     strengths: Mapped[Optional[list]] = mapped_column(JSON)
     weaknesses: Mapped[Optional[list]] = mapped_column(JSON)
+    model_version: Mapped[Optional[str]] = mapped_column(String(100))
     reviewed_at: Mapped[Optional[int]] = mapped_column(BigInteger)
+
+
+class Event(Base):
+    __tablename__ = "events"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    event_uuid: Mapped[str] = mapped_column(String(36), unique=True, index=True)
+    event_type: Mapped[str] = mapped_column(String(64), index=True)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, index=True)
+    submission_id: Mapped[Optional[int]] = mapped_column(Integer, index=True)
+    submission_uuid: Mapped[Optional[str]] = mapped_column(String(36), index=True)
+    payload: Mapped[Optional[dict]] = mapped_column(JSON)
+    created_at: Mapped[int] = mapped_column(BigInteger)
 
 
 async def get_db():
